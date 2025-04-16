@@ -261,7 +261,7 @@ def SCCAF_assessment(*args, **kwargs):
 
 
 # need to check number of cells in each cluster of the training set.
-def self_projection(X, 
+def self_projection(X,
                     cell_types,
                     classifier="LR",
                     penalty='l1',
@@ -271,7 +271,7 @@ def self_projection(X,
 		    solver='liblinear',
                     n=0,
                     cv=5,
-                    whole=False, 
+                    whole=False,
                     n_jobs=None):
     # n = 100 should be good.
     """
@@ -341,7 +341,7 @@ def self_projection(X,
         clf = SGDClassifier(loss='perceptron', n_jobs=n_jobs)
     elif classifier == 'DT':
         clf = DecisionTreeClassifier()
-    
+
     # mean cross validation score
     cvsm = 0
     if cv > 0:
@@ -354,18 +354,18 @@ def self_projection(X,
     print("Accuracy on the training set: %.4f" % accuracy)
     accuracy_test = clf.score(X_test, y_test)
     print("Accuracy on the hold-out set: %.4f" % accuracy_test)
-    
+
     # accuracy of the whole dataset
     if whole:
         accuracy = clf.score(X, cell_types)
         print("Accuracy on the whole set: %.4f" % accuracy)
-    
+
     # get predicted probability on the test set
     y_prob = None
     if not classifier in ['SH', 'PCP']:
         y_prob = clf.predict_proba(X_test)
     y_pred = clf.predict(X_test)
-    
+
     return y_prob, y_pred, y_test, clf, cvsm, accuracy_test
 
 
@@ -553,8 +553,8 @@ def merge_cluster(ad, old_id, new_id, groups):
     ad.obs[new_id].cat.categories = make_unique(groups.astype(str))
     ad.obs[new_id] = ad.obs[new_id].str.split('_').str[0]
     return ad
-    
-    
+
+
 def find_high_resolution(ad, resolution=4, n=100):
     cut = resolution
     while cut > 0.5:
@@ -589,7 +589,7 @@ def get_connection_matrix(ad_obs, key1, key2):
         if len(x)>0:
             for i,j in list(itertools.combinations(x.tolist(), 2)):
                 mat.loc[i,j] = mat.loc[j,i] = 1
-    return mat    
+    return mat
 
 
 def SCCAF_optimize_all(ad,
@@ -597,7 +597,7 @@ def SCCAF_optimize_all(ad,
                        R1norm_cutoff=0.5,
                        R2norm_cutoff=0.05,
                        R1norm_step=0.01,
-                       R2norm_step=0.001, 
+                       R2norm_step=0.001,
                        prefix='L1',
                        min_i = 3,
 		       start = None,
@@ -635,7 +635,7 @@ def SCCAF_optimize_all(ad,
         if not start in ad.obs.keys():
             raise ValueError("`adata.obs['%s']` doesn't exist. Please assign the initial clustering first."%(start))
         ad.obs['%s_Round%d'%(prefix, start_iter)] = ad.obs[start]
-    
+
     clstr_old = len(ad.obs['%s_Round%d'%(prefix, start_iter)].unique())
     #'while acc < min_acc:
     for i in range(10):
@@ -649,7 +649,7 @@ def SCCAF_optimize_all(ad,
                                                      R1norm_cutoff=R1norm_cutoff,
                                                      R2norm_cutoff=R2norm_cutoff,
                                                      start_iter=start_iter,
-                                                     min_acc=min_acc, 
+                                                     min_acc=min_acc,
                                                      prefix=prefix,
                                                      *args, **kwargs)
         print("m1: %f" % m1)
@@ -657,17 +657,17 @@ def SCCAF_optimize_all(ad,
         print("Accuracy: %f" % acc)
         R1norm_cutoff = m1 - R1norm_step
         R2norm_cutoff = m2 - R2norm_step
-        
+
         clstr_new = len(ad.obs['%s_result'%prefix].unique())
-        
+
         if clstr_new >= clstr_old and i >= min_i:
             print("converged SCCAF_all!")
             break
-        
+
         if acc >=min_acc:
             break
-            
-            
+
+
 def SCCAF_optimize(ad,
                    prefix='L1',
                    use='raw',
@@ -781,8 +781,8 @@ def SCCAF_optimize(ad,
         if 'X_pca' not in ad.obsm.keys():
             raise ValueError("`adata.obsm['X_pca']` doesn't exist. Run `sc.pp.pca` first.")
         X = ad.obsm['X_pca']
-    elif 'X_%s'%use in ad.obsm.dtype.fields:
-	X = ad.obsm['X_%s'%use]
+    elif f'X_{use}' in ad.obsm.keys():
+	X = ad.obsm[f'X_{use}']
     else:
         X = ad[:,ad.var['highly_variable']].X
 
@@ -799,7 +799,7 @@ def SCCAF_optimize(ad,
                             fraction=fraction, classifier=classifier, n_jobs=n_jobs)
         accs = [acc]
         ad.obs['%s_self-projection' % old_id] = clf.predict(X)
-        
+
         if plot:
             aucs = plot_roc(y_prob, y_test, clf, cvsm=cvsm, acc=acc, title="Self-project ROC {}".format(old_id))
             if mplotlib_backend:
@@ -870,21 +870,21 @@ def SCCAF_optimize(ad,
             ad.obs['%s_result' % prefix] = ad.obs[old_id]
             print("Converge SCCAF_optimize no. cluster!")
             break
-        
+
         merge_cluster(ad, old_id1, new_id, groups)
-        
+
         if plot:
             sc.pl.scatter(ad, basis=basis, color=[new_id], color_map="RdYlBu_r", legend_loc='on data',
                           show=(mplotlib_backend is None))
             if mplotlib_backend:
                 mplotlib_backend.savefig()
                 plt.clf()
-        
+
         if len(np.unique(groups)) <= 1:
             ad.obs['%s_result' % prefix] = ad.obs[new_id]
             print("no clustering!")
             break
-    
+
     return ad, m1, m2, np.min(accs), i
 
 
@@ -1036,17 +1036,17 @@ def plot_roc(y_prob, y_test, clf, plot='both', save=None, title='', colors=None,
         recs.append(rec)
         rc_aucs.append(metrics.auc(fpr, tpr))
         rp_aucs.append(metrics.auc(rec, prs))
-    
+
     good_aucs = np.asarray(rc_aucs)
     good_aucs = good_aucs[~np.isnan(good_aucs)]
     min_auc_rc = np.min(good_aucs)
     max_auc_rc = np.max(good_aucs)
-    
+
     good_aucs = np.asarray(rp_aucs)
     good_aucs = good_aucs[~np.isnan(good_aucs)]
     min_auc_rp = np.min(good_aucs)
     max_auc_rp = np.max(good_aucs)
-    
+
     if plot in ['both','roc','prc']:
         if colors is None:
             if len(clf.classes_) < 21:
@@ -1056,7 +1056,7 @@ def plot_roc(y_prob, y_test, clf, plot='both', save=None, title='', colors=None,
             else:
                 colors = default_102
         if plot == 'both':
-            
+
             fig, ax = plt.subplots(1, 2, sharey=True)
             ax[0].plot([0, 1], [0, 1], color='k', ls=':')
             ax[0].set_xticks([0, 1])
@@ -1076,7 +1076,7 @@ def plot_roc(y_prob, y_test, clf, plot='both', save=None, title='', colors=None,
                 ax[1].plot(Xs[i], Ys[i], c=colors[i], lw=2, label=cell_type)
             ax[1].set_xlabel('Recall')
             ax[1].set_ylabel('Precision')
-            
+
             ax[0].annotate(r'$AUC_{min}: %.3f$' % min_auc_rc, (0.5, 0.4), fontsize=fontsize)
             ax[0].annotate(r'$AUC_{max}: %.3f$' % max_auc_rc, (0.5, 0.3), fontsize=fontsize)
             ax[1].annotate(r'$AUC_{min}: %.3f$' % min_auc_rp, (0.5, 0.4), fontsize=fontsize)
@@ -1087,7 +1087,7 @@ def plot_roc(y_prob, y_test, clf, plot='both', save=None, title='', colors=None,
             if acc:
                 ax[0].annotate("Test: %.3f" % acc, (0.5, 0.1), fontsize=fontsize)
                 ax[1].annotate("Test: %.3f" % acc, (0.5, 0.1), fontsize=fontsize)
-            
+
         else:
             fig, ax = plt.subplots()
             ax.set_xticks([0, 1])
@@ -1120,7 +1120,7 @@ def plot_roc(y_prob, y_test, clf, plot='both', save=None, title='', colors=None,
 
         if save:
             plt.savefig(save)
-        
+
     return rc_aucs
 
 
@@ -1348,17 +1348,17 @@ import h5py
 def readHCA(fin):
     f = h5py.File(fin, 'r')
     data = f[list(f.keys())[0]]
-    X = csr_matrix((np.array(data.get("data")), 
-                np.array(data.get("indices")), 
-                np.array(data.get("indptr"))), 
+    X = csr_matrix((np.array(data.get("data")),
+                np.array(data.get("indices")),
+                np.array(data.get("indptr"))),
                 shape=np.array(data.get("shape"))[::-1])
     ad = sc.AnnData(X)
     ad.obs_names = np.array(data.get("barcodes")).astype(str)
     ad.var_names = np.array(data.get("gene_names")).astype(str)
     ad.var['ensembl_gene'] = np.array(data.get("genes")).astype(str)
     return(ad)
-    
-    
+
+
 def sc_workflow(ad, prefix='L1', resolution=1.5, n_pcs=15, do_tsne=True):
     sc.pp.normalize_per_cell(ad, counts_per_cell_after=1e4)
     filter_result = sc.pp.filter_genes_dispersion(
@@ -1480,7 +1480,7 @@ def sc_pp_regress_out(adata, keys, n_jobs=None, copy=False):
 
 
 def regress_out(metadata, exprs, covariate_formula, design_formula='1', rcond=-1):
-    """ Implementation of limma's removeBatchEffect function, 
+    """ Implementation of limma's removeBatchEffect function,
     a copy from NaiveDE (https://github.com/Teichlab/NaiveDE)
     """
     # Ensure intercept is not part of covariates
