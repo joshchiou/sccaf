@@ -173,7 +173,7 @@ def normalize_confmat2(cmat):
 
 
 def cluster_adjmat(xmat,
-                   cluster_method='leiden',
+				   cluster_method='leiden',
 				   resolution=1,
 				   cutoff=0.1):
 	"""
@@ -197,14 +197,12 @@ def cluster_adjmat(xmat,
 	"""
 	g = sc._utils.get_igraph_from_adjacency((xmat > cutoff).astype(int), directed=False)
 	print(g)
-    if cluster_method == 'louvain':
-	    part = louvain.find_partition(g, louvain.RBConfigurationVertexPartition,
-	    							  resolution_parameter=resolution)
-    elif cluster_method == 'leiden':
-	    part = leidenalg.find_partition(g, leidenalg.RBConfigurationVertexPartition,
-	    							  resolution_parameter=resolution)
-    else:
-        raise ValueError("Unknown clustering method: %s" % cluster_method)
+	if cluster_method == 'louvain':
+		part = louvain.find_partition(g, louvain.RBConfigurationVertexPartition,resolution_parameter=resolution)
+	elif cluster_method == 'leiden':
+		part = leidenalg.find_partition(g, leidenalg.RBConfigurationVertexPartition, resolution_parameter=resolution)
+	else:
+		raise ValueError("Unknown clustering method: %s" % cluster_method)
 	groups = np.array(part.membership)
 	return groups
 
